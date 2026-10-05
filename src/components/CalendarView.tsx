@@ -6,10 +6,11 @@ import { ease, spring } from '../lib/motion'
 import { Icon } from './Icon'
 
 const kindLabel: Record<EventKind, string> = {
-  meeting: 'Meeting',
-  deadline: 'Deadline',
-  focus: 'Focus time',
-  social: 'Social',
+  showing: 'Showing',
+  openhouse: 'Open house',
+  closing: 'Closing',
+  deadline: 'Inspection / appraisal',
+  call: 'Client call',
 }
 const kinds = Object.keys(kindLabel) as EventKind[]
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -29,7 +30,8 @@ export function CalendarView({ events, setEvents }: Props) {
   const [selected, setSelected] = useState(todayKey)
   const [title, setTitle] = useState('')
   const [time, setTime] = useState('10:00')
-  const [kind, setKind] = useState<EventKind>('meeting')
+  const [location, setLocation] = useState('')
+  const [kind, setKind] = useState<EventKind>('showing')
 
   const days = monthGrid(cursor.y, cursor.m)
   const byDay = new Map<string, CalEvent[]>()
@@ -56,8 +58,12 @@ export function CalendarView({ events, setEvents }: Props) {
     e.preventDefault()
     const text = title.trim()
     if (!text) return
-    setEvents((es) => [...es, { id: uid(), title: text, date: selected, time, kind }])
+    setEvents((es) => [
+      ...es,
+      { id: uid(), title: text, date: selected, time, kind, location: location.trim() || undefined },
+    ])
     setTitle('')
+    setLocation('')
   }
 
   const remove = (id: string) => setEvents((es) => es.filter((e) => e.id !== id))
@@ -182,6 +188,11 @@ export function CalendarView({ events, setEvents }: Props) {
                   <span className="muted small">
                     {e.time} · {kindLabel[e.kind]}
                   </span>
+                  {e.location && (
+                    <span className="event-loc">
+                      <Icon name="pin" size={12} /> {e.location}
+                    </span>
+                  )}
                 </div>
                 <button className="icon-btn ghost" aria-label={`Delete ${e.title}`} onClick={() => remove(e.id)}>
                   <Icon name="x" size={16} />
@@ -193,10 +204,11 @@ export function CalendarView({ events, setEvents }: Props) {
         {dayEvents.length === 0 && <p className="empty">Nothing scheduled.</p>}
 
         <form className="event-form" onSubmit={add}>
-          <input className="input" placeholder="New event title" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Event title" />
+          <input id="event-title" className="input" placeholder="e.g. Showing — Kim family" value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Event title" />
+          <input id="event-location" className="input" placeholder="Property address or place (optional)" value={location} onChange={(e) => setLocation(e.target.value)} aria-label="Location" />
           <div className="row">
-            <input className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" />
-            <select className="input grow" value={kind} onChange={(e) => setKind(e.target.value as EventKind)} aria-label="Event type">
+            <input id="event-time" className="input" type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" />
+            <select id="event-kind" className="input grow" value={kind} onChange={(e) => setKind(e.target.value as EventKind)} aria-label="Event type">
               {kinds.map((k) => (
                 <option key={k} value={k}>
                   {kindLabel[k]}
@@ -220,8 +232,8 @@ export function Upcoming({ events, onSeeAll }: { events: CalEvent[]; onSeeAll: (
     <section className="card" aria-labelledby="up-title">
       <header className="card-head">
         <div>
-          <h2 id="up-title">Upcoming</h2>
-          <p className="muted">Next on your calendar</p>
+          <h2 id="up-title">Schedule</h2>
+          <p className="muted">Showings, calls and closings</p>
         </div>
         <button className="link-btn" onClick={onSeeAll}>
           Calendar
@@ -236,6 +248,11 @@ export function Upcoming({ events, onSeeAll }: { events: CalEvent[]; onSeeAll: (
               <span className="muted small">
                 {relativeDay(e.date)} · {e.time} · {kindLabel[e.kind]}
               </span>
+              {e.location && (
+                <span className="event-loc">
+                  <Icon name="pin" size={12} /> {e.location}
+                </span>
+              )}
             </div>
           </li>
         ))}

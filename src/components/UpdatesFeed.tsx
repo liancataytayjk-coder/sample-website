@@ -4,7 +4,7 @@ import type { Update, UpdateCategory } from '../lib/data'
 import { rise, spring, stagger } from '../lib/motion'
 import { Icon } from './Icon'
 
-const categories: (UpdateCategory | 'All')[] = ['All', 'Release', 'Metrics', 'Team', 'Announcement']
+const categories: (UpdateCategory | 'All')[] = ['All', 'Agent note', 'Lead', 'Listing', 'Transaction']
 
 function ago(h: number) {
   if (h < 1) return 'just now'
@@ -35,7 +35,7 @@ export function UpdatesFeed({ updates, setUpdates, compact = false, onSeeAll }: 
     <section className="card" aria-labelledby={compact ? 'upd-title-c' : 'upd-title'}>
       <header className="card-head">
         <div>
-          <h2 id={compact ? 'upd-title-c' : 'upd-title'}>{compact ? 'Latest updates' : 'Team updates'}</h2>
+          <h2 id={compact ? 'upd-title-c' : 'upd-title'}>{compact ? 'Latest activity' : 'Activity & notes'}</h2>
           <p className="muted">{unread} unread</p>
         </div>
         {compact ? (
@@ -81,7 +81,7 @@ export function UpdatesFeed({ updates, setUpdates, compact = false, onSeeAll }: 
                   <span className="muted small">
                     {u.role} · {ago(u.hoursAgo)}
                   </span>
-                  <span className={`tag tag-${u.category.toLowerCase()}`}>{u.category}</span>
+                  <span className="tag">{u.category}</span>
                 </div>
                 <h3>{u.title}</h3>
                 {!compact && <p>{u.body}</p>}

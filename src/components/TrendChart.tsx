@@ -23,12 +23,21 @@ function useWidth<T extends HTMLElement>() {
   return [ref, width] as const
 }
 
-function niceMax(v: number) {
-  const step = 10 ** Math.floor(Math.log10(v))
-  return Math.ceil(v / step) * step
+/** Round tick step (1, 2, 5 × 10^k) giving about four intervals. */
+function niceStep(max: number) {
+  const rough = max / 4
+  const pow = 10 ** Math.floor(Math.log10(rough))
+  return ([1, 2, 5, 10].find((m) => m * pow >= rough) ?? 10) * pow
 }
 
-export function TrendChart({ data }: { data: Point[] }) {
+interface Props {
+  data: Point[]
+  title: string
+  subtitle: string
+  unit: string
+}
+
+export function TrendChart({ data, title, subtitle, unit }: Props) {
   const [wrapRef, width] = useWidth<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
   const [view, setView] = useState<'chart' | 'table'>('chart')
@@ -37,8 +46,9 @@ export function TrendChart({ data }: { data: Point[] }) {
   const m = { top: 16, right: 56, bottom: 28, left: 40 }
   const innerW = Math.max(0, width - m.left - m.right)
   const innerH = height - m.top - m.bottom
-  const yMax = niceMax(Math.max(...data.map((d) => d.value)) * 1.1)
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(yMax * t))
+  const step = niceStep(Math.max(...data.map((d) => d.value)) * 1.1)
+  const yMax = Math.ceil((Math.max(...data.map((d) => d.value)) * 1.1) / step) * step
+  const ticks = Array.from({ length: Math.round(yMax / step) + 1 }, (_, i) => i * step)
 
   const x = (i: number) => m.left + (i / (data.length - 1)) * innerW
   const y = (v: number) => m.top + innerH - (v / yMax) * innerH
@@ -58,8 +68,10 @@ export function TrendChart({ data }: { data: Point[] }) {
     <section className="card chart-card" aria-labelledby="trend-title">
       <header className="card-head">
         <div>
-          <h2 id="trend-title">Weekly throughput</h2>
-          <p className="muted">Tasks shipped per week · last 12 weeks · {formatInt(total)} total</p>
+          <h2 id="trend-title">{title}</h2>
+          <p className="muted">
+            {subtitle} · {formatInt(total)} total
+          </p>
         </div>
         <div className="seg" role="tablist" aria-label="Display as">
           {(['chart', 'table'] as const).map((v) => (
@@ -90,7 +102,7 @@ export function TrendChart({ data }: { data: Point[] }) {
             transition={{ duration: 0.2 }}
           >
             {width > 0 && (
-              <svg width={width} height={height} role="img" aria-label="Line chart of tasks shipped per week">
+              <svg width={width} height={height} role="img" aria-label={`Line chart: ${title}`}>
                 {ticks.map((t) => (
                   <g key={t}>
                     <line
@@ -183,7 +195,9 @@ export function TrendChart({ data }: { data: Point[] }) {
                   transition={{ type: 'spring', stiffness: 500, damping: 40 }}
                 >
                   <span className="muted">Week of {fmtShort.format(data[hover].week)}</span>
-                  <strong>{formatInt(data[hover].value)} tasks</strong>
+                  <strong>
+                    {formatInt(data[hover].value)} {unit}
+                  </strong>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -201,7 +215,9 @@ export function TrendChart({ data }: { data: Point[] }) {
               <thead>
                 <tr>
                   <th scope="col">Week of</th>
-                  <th scope="col" className="num">Tasks shipped</th>
+                  <th scope="col" className="num">
+                    {unit[0].toUpperCase() + unit.slice(1)}
+                  </th>
                 </tr>
               </thead>
               <tbody>
